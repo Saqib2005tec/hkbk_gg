@@ -85,6 +85,163 @@ app.get("/api/employee/:id", async (req, res) => {
   }
 });
 
+app.post("/api/onboarding", async (req, res) => {
+  try {
+    const { id, stage, status } = req.body;
+
+    if (id === undefined || !stage || !status) {
+      return res.status(400).json({
+        ok: false,
+        error: "Required fields: id, stage, status",
+      });
+    }
+
+    const tx = await ledger.setOnboarding(id, stage, status);
+    const receipt = await tx.wait();
+
+    res.json({
+      ok: true,
+      message: "Onboarding written to blockchain",
+      id,
+      txHash: receipt.hash,
+      contractAddress: CONTRACT_ADDRESS,
+    });
+  } catch (error) {
+    console.error("POST /api/onboarding failed:", error);
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/onboarding/:id", async (req, res) => {
+  try {
+    const record = await ledger.getOnboarding(req.params.id);
+
+    res.json({
+      ok: true,
+      id: req.params.id,
+      stage: record[0],
+      status: record[1],
+      updatedAt: record[2].toString(),
+      contractAddress: CONTRACT_ADDRESS,
+    });
+  } catch (error) {
+    console.error("GET /api/onboarding/:id failed:", error);
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
+app.post("/api/attendance", async (req, res) => {
+  try {
+    const { id, date, status } = req.body;
+
+    if (id === undefined || !date || !status) {
+      return res.status(400).json({
+        ok: false,
+        error: "Required fields: id, date, status",
+      });
+    }
+
+    const tx = await ledger.markAttendance(id, date, status);
+    const receipt = await tx.wait();
+
+    res.json({
+      ok: true,
+      message: "Attendance written to blockchain",
+      id,
+      date,
+      txHash: receipt.hash,
+      contractAddress: CONTRACT_ADDRESS,
+    });
+  } catch (error) {
+    console.error("POST /api/attendance failed:", error);
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/attendance/:id/:date", async (req, res) => {
+  try {
+    const record = await ledger.getAttendance(req.params.id, req.params.date);
+
+    res.json({
+      ok: true,
+      id: req.params.id,
+      date: record[0],
+      status: record[1],
+      markedAt: record[2].toString(),
+      contractAddress: CONTRACT_ADDRESS,
+    });
+  } catch (error) {
+    console.error("GET /api/attendance/:id/:date failed:", error);
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
+app.post("/api/payroll", async (req, res) => {
+  try {
+    const { id, month, amount, currency, status } = req.body;
+
+    if (id === undefined || !month || amount === undefined || !currency || !status) {
+      return res.status(400).json({
+        ok: false,
+        error: "Required fields: id, month, amount, currency, status",
+      });
+    }
+
+    const tx = await ledger.setPayroll(id, month, amount, currency, status);
+    const receipt = await tx.wait();
+
+    res.json({
+      ok: true,
+      message: "Payroll written to blockchain",
+      id,
+      month,
+      txHash: receipt.hash,
+      contractAddress: CONTRACT_ADDRESS,
+    });
+  } catch (error) {
+    console.error("POST /api/payroll failed:", error);
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/payroll/:id/:month", async (req, res) => {
+  try {
+    const record = await ledger.getPayroll(req.params.id, req.params.month);
+
+    res.json({
+      ok: true,
+      id: req.params.id,
+      month: record[0],
+      amount: record[1].toString(),
+      currency: record[2],
+      status: record[3],
+      updatedAt: record[4].toString(),
+      contractAddress: CONTRACT_ADDRESS,
+    });
+  } catch (error) {
+    console.error("GET /api/payroll/:id/:month failed:", error);
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Blockchain API bridge running at http://127.0.0.1:${PORT}`);
   console.log(`Using EmployeeLedger at ${CONTRACT_ADDRESS}`);
